@@ -21,3 +21,4 @@ def score(y_test,pred_y ):
     print("准确率：")
     # 使用准确率方法验证
     print(metrics.accuracy_score(y_true=y_test, y_pred=pred_y))
+    return metrics.accuracy_score(y_true=y_test, y_pred=pred_y)

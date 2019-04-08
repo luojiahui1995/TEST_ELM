@@ -1,11 +1,13 @@
 import numpy as np
-from sklearn.datasets import load_iris  # 数据集
+import pandas as pd
+from sklearn.datasets import load_breast_cancer  # 数据集
 from sklearn.model_selection import train_test_split  # 数据集的分割函数
 from sklearn.preprocessing import StandardScaler  # 数据预处理
 from sklearn import metrics # 引入包含数据验证方法的包
 from publicfc import to3
 from publicfc import result_max
 from publicfc import score
+import matplotlib.pyplot as plt
 
 class SingeHiddenLayer(object):
 
@@ -72,12 +74,12 @@ class SingeHiddenLayer(object):
         #     b = np.row_stack((b, self.first_b))  # 以叠加行的方式填充数组
 
         # 预测
-        print(self.t_data.shape)
-        print(self.w.shape)
-        print(b.shape)
+        # print(self.t_data.shape)
+        # print(self.w.shape)
+        # print(b.shape)
         self.pred_Y = np.dot(self.sigmoid(np.dot(self.t_data, self.w) + b), self.out_w)
-        print(self.sigmoid(np.dot(self.t_data, self.w) + b).shape)
-        print(self.out_w.shape)
+        # print(self.sigmoid(np.dot(self.t_data, self.w) + b).shape)
+        # print(self.out_w.shape)
         #print(np.dot(self.sigmoid(np.dot(self.t_data, self.w) + b), self.out_w))
 
         return self.pred_Y
@@ -96,41 +98,66 @@ class SingeHiddenLayer(object):
 
 
 stdsc = StandardScaler()  # StandardScaler类,利用接口在训练集上计算均值和标准差，以便于在后续的测试集上进行相同的缩放
-iris = load_iris()
-print(iris.data.shape)
-print(iris.target.shape)
-x, y = stdsc.fit_transform(iris.data), iris.target  # 数据归一化
+breast_cancer = pd.read_csv('r_test.csv')#load_breast_cancer()
+print(breast_cancer.data.shape)
+print(breast_cancer.target.shape)
+x, y = stdsc.fit_transform(breast_cancer.data), breast_cancer.target  # 数据归一化
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=0)
 
+list1 = []
+list2 = []
+listx = []
+for i in range(5, 10):
+    ELM = SingeHiddenLayer(x_train, y_train,i)  # 训练数据集，训练集的label，隐藏层节点个数
+    out_w = ELM.train(x_train, y_train, 1)[0]
+    b1 = ELM.predict_pre(x_train)#使用测试集预测准备，给出偏置b
+    out_y = ELM.predict(x_train, b1)#训练集输入，用训练所得out_w求的y~
+#print(out_y)
+    train_y =ELM.train(x_train, y_train, 1)[1]
+#print(train_y)
+    e = train_y - out_y#求得残差e，e将作为下次计算的输入
 
-
-ELM = SingeHiddenLayer(x_train, y_train, 10)  # 训练数据集，训练集的label，隐藏层节点个数
-out_w = ELM.train(x_train, y_train, 3)[0]
-b1 = ELM.predict_pre(x_train)#使用测试集预测准备，给出偏置b
-out_y = ELM.predict(x_train, b1)#训练集输入，用训练所得out_w求的y~
-print(out_y)
-train_y =ELM.train(x_train, y_train, 3)[1]
-print(train_y)
-e = train_y - out_y#求得残差e，e将作为下次计算的输入
-b1 = ELM.predict_pre(x_test)
-y1_pred = ELM.predict(x_test, b1)#第一层直接输出的预测结果3列
-Y1_pred = result_max(y1_pred)
+    b1 = ELM.predict_pre(x_test)
+    y1_pred = ELM.predict(x_test, b1)#第一层直接输出的预测结果3列
+    Y1_pred = result_max(y1_pred)
 #print(Y1_pred)
-score(y_test, Y1_pred)
-ELM2 = SingeHiddenLayer(x_test, y_test, 4)
-ELM2.train(e, y_train, 3)[0]#用第一层训练的残差e作为输入进行第二层训练，得到out_w2
-b = ELM2.predict_pre(x_test)#预测准备，使用测试集。给出偏执b
-out_Y =ELM.predict(x_test, b1) + ELM2.predict(x_test, b)
-# out_Y = y1_pred + out_y2
-# print(y1_pred)
-# print("--------------------------------------------------------------")
-# print(out_y2)
-# print("--------------------------------------------------------------")
-# print(out_Y)
-pred_Y = result_max(out_Y)
-# print(pred_Y)
-# print(pred_Y)
-score(y_test, pred_Y)
+    score1 = score(y_test, Y1_pred)
+    print("----------------------------------------")
+    list1.append(score1)
+    listx.append(i)
+
+    print(listx)
+
+    ELM2 = SingeHiddenLayer(x_test, y_test,2)
+    ELM2.train(e, y_train, 2)[0]#用第一层训练的残差e作为输入进行第二层训练，得到out_w2
+    b2 = ELM2.predict_pre(x_test)#预测准备，使用测试集。给出偏执b
+    out_Y = ELM.predict(x_test, b1) + ELM2.predict(x_test, b2)
+    # out_Y = y1_pred + out_y2
+    # print(y1_pred)
+    # print("--------------------------------------------------------------")
+    # print(out_y2)
+    # print("--------------------------------------------------------------")
+    # print(out_Y)
+    pred_Y = result_max(out_Y)
+    # print(pred_Y)
+    # print(pred_Y)
+    score2 = score(y_test, pred_Y)
+    list2.append(score2)
+    #list1.extend(list2)
+    #list.append(list1)
+x = listx
+y1 = list1
+y2 = list2
+plt.plot(x,y1,"*")
+plt.plot(x,y2,"+")
+plt.show()
+
+
+
+
+
+
+
 
 
 
